@@ -1,5 +1,3 @@
-use std::ops::{Add, Mul};
-
 use crate::type_bool::{If, True};
 
 #[repr(u8)]
@@ -17,7 +15,7 @@ pub enum NumType {
 
 pub type BigInt = i128;
 
-pub trait Num: Copy + Add<Self> + Mul<Self> + Eq + Ord + TryFrom<BigInt> + Into<BigInt> {
+pub trait Num: Copy + Eq + Ord + TryFrom<BigInt> + Into<BigInt> {
     const MIN: Self;
     const MAX: Self;
     const MIN_BIG_INT: BigInt;
@@ -98,7 +96,7 @@ impl Num for i128 {
 }
 
 pub const fn can_contain<T: Num>(min: BigInt, max: BigInt) -> bool {
-    min >= T::MIN_BIG_INT && max <= T::MAX_BIG_INT
+    min <= max && min >= T::MIN_BIG_INT && max <= T::MAX_BIG_INT
 }
 
 pub trait CanContain<const MIN: BigInt, const MAX: BigInt>: Num {}
