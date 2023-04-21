@@ -7,7 +7,7 @@ use std::{
     ops::{Add, Mul, Sub},
 };
 
-use num::{BigInt, CanContain, Num};
+use num::{BigInt, CanContain};
 use type_bool::{If, True};
 
 mod num;
@@ -22,11 +22,7 @@ impl<const MIN: BigInt, const MAX: BigInt, T: CanContain<MIN, MAX>> Int<MIN, MAX
         (v.into() >= MIN && v.into() <= MAX).then_some(Self(v))
     }
 
-    pub fn into_range<
-        const MIN2: BigInt,
-        const MAX2: BigInt,
-        T2: CanContain<MIN2, MAX2> + TryFrom<T>,
-    >(
+    pub fn into<const MIN2: BigInt, const MAX2: BigInt, T2: CanContain<MIN2, MAX2> + TryFrom<T>>(
         self,
     ) -> Int<MIN2, MAX2, T2>
     where
@@ -36,12 +32,21 @@ impl<const MIN: BigInt, const MAX: BigInt, T: CanContain<MIN, MAX>> Int<MIN, MAX
         Int(T2::try_from(self.0).ok().unwrap())
     }
 
-    pub fn into<T2: CanContain<MIN, MAX> + TryFrom<T>>(self) -> Int<MIN, MAX, T2> {
+    pub fn into_range<const MIN2: BigInt, const MAX2: BigInt>(self) -> Int<MIN2, MAX2, T>
+    where
+        If<{ MIN2 <= MIN }>: True,
+        If<{ MAX2 >= MAX }>: True,
+        T: CanContain<MIN2, MAX2>,
+    {
+        Int(self.0)
+    }
+
+    pub fn into_type<T2: CanContain<MIN, MAX> + TryFrom<T>>(self) -> Int<MIN, MAX, T2> {
         Int(T2::try_from(self.0).ok().unwrap())
     }
 
-    pub fn into_prim<U: From<T>>(self) -> U {
-        U::from(self.0)
+    pub fn inner(self) -> T {
+        self.0
     }
 
     pub fn clamp<const MIN2: BigInt, const MAX2: BigInt>(self) -> Int<MIN2, MAX2, T> {
@@ -57,7 +62,21 @@ impl<const MIN: BigInt, const MAX: BigInt, T: CanContain<MIN, MAX>> Int<MIN, MAX
     }
 }
 
-pub type ToInt<T: Num> = Int<{ T::MIN_BIG_INT }, { T::MAX_BIG_INT }, T>;
+impl<const MIN: BigInt, const MAX: BigInt, T: Into<i128>> From<Int<MIN, MAX, T>> for i128 {
+    fn from(value: Int<MIN, MAX, T>) -> Self {
+        value.0.into()
+    }
+}
+
+impl<const MIN: BigInt, const MAX: BigInt, T: TryFrom<i128>> TryFrom<i128> for Int<MIN, MAX, T> {
+    type Error = &'static str;
+
+    fn try_from(value: i128) -> Result<Self, Self::Error> {
+        (value >= MIN && value <= MAX)
+            .then_some(Self(value.try_into().ok().unwrap()))
+            .ok_or("Value out of bounds!")
+    }
+}
 
 impl<
         const MIN1: BigInt,
@@ -189,21 +208,21 @@ pub fn int<const V: BigInt, T: CanContain<V, V>>() -> Int<V, V, T> {
 
 #[cfg(test)]
 mod test {
-    use crate::{int, Int, ToInt};
+    use crate::{int, Int};
 
     #[test]
     fn test_mul_add() {
         let a = int::<10, u8>();
         let b = int::<5, i32>();
-        let x: i32 = int::<200, u8>().into_prim();
-        let c: Int<15, 15, u8> = a + b.into();
-        let c2: Int<5, 5, u8> = a - b.into();
-        let d: Int<10, 20, i32> = c.into_range();
-        let e: Int<50, 50, u8> = a * b.into();
-        let f: Int<_, _, i32> = e.into();
-        let g: Int<10, 270, i16> = e.into_range();
-        let h: Int<10, 271, i16> = g.into_range();
-        let i: Int<_, _, _> = h * c.into() * b.into();
+        let _x = int::<200, u8>().inner();
+        let c: Int<15, 16, _> = (a + b.into_type()).into_range();
+        let c2: Int<5, 5, u8> = a - b.into_type();
+        let d: Int<10, 20, i32> = c.into();
+        let e: Int<50, 50, u8> = a * b.into_type();
+        let f: Int<_, _, i32> = e.into_type();
+        let g: Int<10, 270, i16> = e.into();
+        let h: Int<10, 271, i16> = g.into();
+        let i: Int<_, _, _> = h * c.into_type() * b.into_type();
         println!("{c2}, {d}, {f}, {g}, {h}, {i}");
     }
 
@@ -211,6 +230,6 @@ mod test {
     fn test_ord() {
         let a = int::<10, u8>();
         let b = int::<5, i32>();
-        assert!(a > b.into());
+        assert!(a > b.into_type());
     }
 }
