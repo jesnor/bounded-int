@@ -130,14 +130,9 @@ mod test {
     use crate::{int, Int};
 
     #[test]
-    fn test_int() {
+    fn test_mul_add() {
         let a = int::<10, u8>();
         let b = int::<5, i32>();
-
-        if a > b.into() {
-            println!("a > b");
-        }
-
         let c: Int<15, 15, u8> = a + b.into();
         let d: Int<10, 20, i32> = c.into_range();
         let e: Int<50, 50, u8> = a * b.into();
@@ -146,5 +141,11 @@ mod test {
         let h: Int<10, 271, i16> = g.into_range();
         let i: Int<_, _, _> = h * c.into();
         println!("{d}, {f}, {g}, {h}, {i}");
+    }
+
+    fn test_ord() {
+        let a = int::<10, u8>();
+        let b = int::<5, i32>();
+        assert!(a > b.into());
     }
 }
