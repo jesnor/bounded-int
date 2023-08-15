@@ -1,8 +1,8 @@
 # bounded-int
 
-Statically checked, bounded integer types for Rust. The bounded integer type behaves similar to the normal integer types in terms of arithmetic and conversion operations. There are no runtime checks and all operation over-/underflow is checked at compile time.
+An experiment with statically checked, bounded integer types for Rust. The bounded integer type behaves similar to the normal integer types in terms of arithmetic and conversion operations. There are no runtime checks and all operation over-/underflow is checked at compile time.
 
-Requires nightly toolchain because of const generic operations
+Requires nightly toolchain because of const generic operations.
 
 # Example Usage
 
